@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuộc Đua Kỳ Thú Cùng Từ Vựng</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* General styling */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0f2fe; /* Light blue background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        .header {
+            background-color: #0d9488; /* Teal color */
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+        }
+        .game-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            min-height: 400px;
+        }
+        
+        /* Racer progress bar */
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f3f4f6;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+        .progress {
+            height: 100%;
+            background-color: #10b981;
+            width: 0;
+            transition: width 0.5s ease-in-out;
+        }
+        .character {
+            font-size: 4rem;
+            transition: transform 0.5s ease-in-out;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translateY(-50%);
+            transform: translateY(-50%);
+        }
+        
+        /* Question box and options */
+        .question-box {
+            background-color: #f0fdf4; /* Light green */
+            border: 2px solid #14532d; /* Dark green */
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            width: 100%;
+        }
+        .question-box h2 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #14532d;
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+            gap: 1rem;
+            width: 100%;
+        }
+        @media (min-width: 640px) {
+            .options-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        .option-button {
+            background-color: #4ade80; /* Green */
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .option-button:hover {
+            transform: translateY(-3px);
+            background-color: #22c55e;
+        }
+        .option-button.correct {
+            background-color: #22c55e;
+        }
+        .option-button.incorrect {
+            background-color: #ef4444;
+        }
+
+        /* End game and mini game screens */
+        .end-game-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+        }
+        .end-game-screen h2 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #14532d;
+            margin-bottom: 1rem;
+        }
+        .achievement-icon {
+            font-size: 5rem;
+            color: #f59e0b;
+            margin-bottom: 1rem;
+            animation: pulse-animation 1s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #0d9488;
+            animation: spin 1s ease infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* New Mini-Game CSS */
+        .mini-game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .mini-game-canvas {
+            background-color: #f0fdf4;
+            border: 2px solid #14532d;
+            border-radius: 15px;
+            cursor: crosshair;
+        }
+        .mini-game-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0 8px 8px 0;
+            background-color: #0d9488;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .mini-game-btn:hover {
+            background-color: #0c746e;
+        }
+        .control-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-blue-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="game-container">
+        <div class="header">
+            <h1 class="text-3xl font-bold">Vocabulary Race Game</h1>
+            <p class="text-sm font-light mt-1">Topic: Leisure Activities</p>
+        </div>
+
+        <div id="start-screen" class="game-screen p-8 text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Welcome to the race!</h2>
+            <p class="text-gray-600 mb-6">Are you ready to become a vocabulary champion? Answer the questions correctly to move forward and win the race!</p>
+            <div class="w-full max-w-sm mx-auto mb-6">
+                <input type="text" id="user-name" placeholder="Enter your name" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+            </div>
+            <div id="loading-container" class="hidden flex flex-col items-center">
+                <div class="loading-spinner"></div>
+                <p class="text-gray-600 mt-4">Generating new questions...</p>
+            </div>
+            <div id="start-buttons">
+                <button onclick="generateAndStartGame()" class="px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-lg shadow-lg transition-transform transform hover:scale-105 mb-4">Generate New Questions ✨</button>
+                <button onclick="startGame()" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg shadow-lg transition-transform transform hover:scale-105">Play with Default Questions</button>
+            </div>
+        </div>
+
+        <div id="main-game-screen" class="hidden p-8">
+            <div class="flex justify-between items-center mb-4">
+                <div class="text-lg font-bold">Score: <span id="score">0</span></div>
+                <div class="text-lg font-bold">Question: <span id="current-question-number">1</span> / <span id="total-questions">13</span></div>
+            </div>
+            
+            <div class="relative w-full h-2 bg-gray-200 rounded-full mb-8">
+                <div id="progress-track" class="absolute h-full bg-green-500 rounded-full transition-all duration-500 ease-in-out"></div>
+                <i class="fa-solid fa-person-running text-3xl text-yellow-500 absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-500 ease-in-out" id="racer"></i>
+            </div>
+            
+            <div class="question-box">
+                <h2 id="question-text"></h2>
+            </div>
+            <div id="options-container" class="options-grid">
+                <!-- Buttons will be dynamically added here -->
+            </div>
+        </div>
+
+        <div id="round-complete-screen" class="hidden game-screen">
+            <h2 class="text-4xl font-bold text-gray-800 mb-4">Congratulations, <span id="round-complete-name"></span>!</h2>
+            <p class="text-gray-600 mb-6 text-xl">You have completed Round <span id="current-round-number">1</span>. Ready for a fun challenge?</p>
+            <button onclick="startMiniGame()" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-lg transition-transform transform hover:scale-105">Start Mini-Game</button>
+        </div>
+
+        <div id="mini-game-screen" class="hidden game-screen">
+            <div class="mini-game-container">
+                <h2 class="text-2xl font-bold mb-4">Mini-Game: Click & Win!</h2>
+                <div class="game-rules mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
+                    <p class="font-bold">Game Rules:</p>
+                    <ul class="list-disc list-inside">
+                        <li>You have 15 seconds to click on the red squares.</li>
+                        <li>Each red square you click gives you 10 points.</li>
+                        <li>Beware! Clicking on a blue square will deduct 5 points.</li>
+                        <li>Your mini-game score will be added to your total score.</li>
+                    </ul>
+                </div>
+                <p class="text-lg mb-2">Mini-Game Score: <span id="mini-game-score">0</span></p>
+                <p class="text-lg mb-4">Time Remaining: <span id="mini-game-timer">15</span>s</p>
+                <canvas id="mini-game-canvas" class="mini-game-canvas"></canvas>
+            </div>
+        </div>
+
+        <div id="end-game-screen" class="end-game-screen hidden">
+            <i class="fas fa-trophy achievement-icon"></i>
+            <h2 class="text-4xl">Congratulations, <span id="final-user-name"></span>!</h2>
+            <p>You have finished the race and become a Vocabulary Champion!</p>
+            <p class="text-2xl font-bold mt-4">Your final score is: <span id="final-score">0</span></p>
+            <p class="text-lg mt-2">You have earned the badge:</p>
+            <div class="medal-container">
+                <i class="fas fa-medal achievement-icon"></i>
+                <i class="fas fa-medal achievement-icon"></i>
+                <i class="fas fa-medal achievement-icon"></i>
+            </div>
+            <button onclick="restartGame()" class="mt-8 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-lg transition-transform transform hover:scale-105">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Default questions array, organized by rounds.
+        // This is a backup if the Gemini API call fails.
+        const defaultQuestions = [
+            {
+                title: 'Round 1: Warm Up',
+                questions: [
+                    {
+                        type: 'multiple_choice',
+                        question: "Which word means 'very interested, very enthusiastic'?",
+                        options: ["balance", "keen", "cruel"],
+                        correctAnswer: "keen"
+                    },
+                    {
+                        type: 'multiple_choice',
+                        question: "What is the English term for doing, fixing, or decorating things at home yourself?",
+                        options: ["origami", "DIY (do-it-yourself)", "message"],
+                        correctAnswer: "DIY (do-it-yourself)"
+                    },
+                    {
+                        type: 'multiple_choice',
+                        question: "Which word means 'to hate'?",
+                        options: ["prefer", "keep in touch", "detest"],
+                        correctAnswer: "detest"
+                    },
+                    {
+                        type: 'multiple_choice',
+                        question: "What is the English word for free time?",
+                        options: ["leisure", "message", "kit"],
+                        correctAnswer: "leisure"
+                    },
+                ]
+            },
+            {
+                title: 'Round 2: Speed Up',
+                questions: [
+                    {
+                        type: 'matching',
+                        question: "Match the following words with their Vietnamese meanings.",
+                        pairs: [
+                            { word: 'keen', meaning: 'say mê, ham thích' },
+                            { word: 'detest', meaning: 'căm ghét' },
+                            { word: 'stay in shape', meaning: 'giữ dáng' },
+                            { word: 'message', meaning: 'tin nhắn, gửi tin nhắn' },
+                            { word: 'origami', meaning: 'nghệ thuật gấp giấy Nhật Bản' }
+                        ]
+                    },
+                    {
+                        type: 'matching',
+                        question: "Match the following words with their Vietnamese meanings.",
+                        pairs: [
+                            { word: 'fancy', meaning: 'muốn làm gì, thích' },
+                            { word: 'origami', meaning: 'nghệ thuật gấp giấy Nhật Bản' },
+                            { word: 'leisure', meaning: 'thời gian rảnh rỗi' },
+                            { word: 'kit', meaning: 'bộ dụng cụ' }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: 'Round 3: Finish Line',
+                questions: [
+                    {
+                        type: 'fill_in_the_blank',
+                        question: "My sister is very ______ of knitting.",
+                        options: ["fond", "crazy", "balance"],
+                        correctAnswer: "fond"
+                    },
+                    {
+                        type: 'fill_in_the_blank',
+                        question: "It's important to keep in ______ with your friends, even if you live far away.",
+                        options: ["touch", "message", "kit"],
+                        correctAnswer: "touch"
+                    },
+                    {
+                        type: 'fill_in_the_blank',
+                        question: "I want to buy a new sports ______ to play badminton.",
+                        options: ["fancy", "kit", "fold"],
+                        correctAnswer: "kit"
+                    },
+                    {
+                        type: 'fill_in_the_blank',
+                        question: "I don't ______ eating out; I prefer cooking at home.",
+                        options: ["fancy", "fold", "detest"],
+                        correctAnswer: "fancy"
+                    }
+                ]
+            }
+        ];
+        
+        let questions = defaultQuestions;
+        let currentRoundIndex = 0;
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let miniGameScore = 0;
+        let questionsAnsweredCorrectly = 0;
+        let totalQuestions = 0;
+        let userName = '';
+        
+        // Mini-game specific variables
+        let miniGameTimer;
+        let miniGameTimeRemaining = 0;
+        let miniGameRunning = false;
+        let miniGameCanvas;
+        let miniGameCtx;
+        const miniGameSquares = [];
+        const squareSize = 50;
+        const targetColor = 'red';
+        const decoyColor = 'blue';
+        const squareTypes = [targetColor, decoyColor];
+
+        // Get DOM elements
+        const startScreen = document.getElementById('start-screen');
+        const mainGameScreen = document.getElementById('main-game-screen');
+        const endGameScreen = document.getElementById('end-game-screen');
+        const roundCompleteScreen = document.getElementById('round-complete-screen');
+        const miniGameScreen = document.getElementById('mini-game-screen');
+        const questionTextElement = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const scoreElement = document.getElementById('score');
+        const finalScoreElement = document.getElementById('final-score');
+        const finalUserNameElement = document.getElementById('final-user-name');
+        const userNameInput = document.getElementById('user-name');
+        const currentQuestionNumberElement = document.getElementById('current-question-number');
+        const totalQuestionsElement = document.getElementById('total-questions');
+        const roundCompleteNameElement = document.getElementById('round-complete-name');
+        const currentRoundNumberElement = document.getElementById('current-round-number');
+        const miniGameScoreElement = document.getElementById('mini-game-score');
+        const miniGameTimerElement = document.getElementById('mini-game-timer');
+        const racer = document.getElementById('racer');
+        const progressTrack = document.getElementById('progress-track');
+        const startButtons = document.getElementById('start-buttons');
+        const loadingContainer = document.getElementById('loading-container');
+        
+        // Sound effects
+        const correctSound = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
+        const wrongSound = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3');
+        const finishSound = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3');
+        const minigameSound = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3');
+        correctSound.volume = 0.5;
+        wrongSound.volume = 0.5;
+        finishSound.volume = 0.5;
+        minigameSound.volume = 0.5;
+
+        /**
+         * Calculates the total number of questions across all rounds.
+         */
+        function calculateTotalQuestions() {
+            totalQuestions = questions.reduce((sum, round) => sum + round.questions.length, 0);
+        }
+
+        /**
+         * Generates new questions using the Gemini API.
+         */
+        async function generateNewQuestions() {
+            startButtons.classList.add('hidden');
+            loadingContainer.classList.remove('hidden');
+
+            const prompt = `
+            Create 3 rounds of questions about English vocabulary on the topic "Leisure Activities".
+            Each round should have a different question type:
+            - Round 1: 5 multiple-choice questions.
+            - Round 2: 3 matching questions.
+            - Round 3: 5 fill-in-the-blank questions.
+            Ensure each question has the following structure:
+            - type: "multiple_choice", "fill_in_the_blank", or "matching".
+            - For "multiple_choice" and "fill_in_the_blank", include "question" (the question), "options" (an array of choices), and "correctAnswer" (the correct answer).
+            - For "matching", include "question" (the question) and "pairs" (an array of word-meaning pairs).
+            - The output format must be a JSON array, where each element is a round with "title" and "questions" fields.
+            - Ensure the words "stay in shape" and "message" are included in the generated questions.
+            `
+            
+            const chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            
+            const payload = {
+                contents: chatHistory,
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "title": { "type": "STRING" },
+                                "questions": {
+                                    "type": "ARRAY",
+                                    "items": {
+                                        "type": "OBJECT",
+                                        "properties": {
+                                            "type": { "type": "STRING", "enum": ["multiple_choice", "fill_in_the_blank", "matching"] },
+                                            "question": { "type": "STRING" },
+                                            "options": {
+                                                "type": "ARRAY",
+                                                "items": { "type": "STRING" }
+                                            },
+                                            "correctAnswer": { "type": "STRING" },
+                                            "pairs": {
+                                                "type": "ARRAY",
+                                                "items": {
+                                                    "type": "OBJECT",
+                                                    "properties": {
+                                                        "word": { "type": "STRING" },
+                                                        "meaning": { "type": "STRING" }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0) {
+                    const jsonString = result.candidates[0].content.parts[0].text;
+                    const newQuestions = JSON.parse(jsonString);
+                    questions = newQuestions;
+                    calculateTotalQuestions();
+                    
+                    startGame();
+
+                } else {
+                    console.error("Error: Did not receive a response from the API.");
+                    loadingContainer.classList.add('hidden');
+                    startButtons.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                loadingContainer.classList.add('hidden');
+                startButtons.classList.remove('hidden');
+            }
+        }
+        
+        /**
+         * Starts the game with newly generated questions.
+         */
+        function generateAndStartGame() {
+            userName = userNameInput.value.trim();
+            generateNewQuestions();
+        }
+
+        /**
+         * Starts the game with either default or newly generated questions.
+         */
+        function startGame() {
+            userName = userNameInput.value.trim();
+            if (!userName) userName = "Player";
+            startScreen.classList.add('hidden');
+            mainGameScreen.classList.remove('hidden');
+            loadingContainer.classList.add('hidden');
+            startButtons.classList.remove('hidden');
+            
+            // Reset game state
+            currentRoundIndex = 0;
+            currentQuestionIndex = 0;
+            score = 0;
+            questionsAnsweredCorrectly = 0;
+            calculateTotalQuestions();
+
+            // Check if there are questions to play
+            if (!questions || questions.length === 0) {
+                // IMPORTANT: Replaced alert() with a console log and a message to the user
+                console.log("No questions to play. Please try again.");
+                restartGame();
+                return;
+            }
+            
+            scoreElement.textContent = score;
+            racer.style.left = '0%';
+            progressTrack.style.width = '0%';
+            showQuestion();
+        }
+
+        /**
+         * Displays the current question.
+         */
+        function showQuestion() {
+            // FIX: Add a check to prevent "undefined" error.
+            if (currentRoundIndex >= questions.length || !questions[currentRoundIndex]) {
+                endGame();
+                return;
+            }
+
+            const currentRoundQuestions = questions[currentRoundIndex].questions;
+
+            if (currentQuestionIndex >= currentRoundQuestions.length) {
+                checkRoundComplete();
+                return;
+            }
+
+            const currentQuestion = currentRoundQuestions[currentQuestionIndex];
+            questionTextElement.textContent = currentQuestion.question;
+            optionsContainer.innerHTML = '';
+            
+            // Update question numbers
+            let currentQuestionOverall = 0;
+            for(let i = 0; i < currentRoundIndex; i++) {
+                currentQuestionOverall += questions[i].questions.length;
+            }
+            currentQuestionOverall += (currentQuestionIndex + 1);
+            currentQuestionNumberElement.textContent = currentQuestionOverall;
+            totalQuestionsElement.textContent = totalQuestions;
+
+            if (currentQuestion.type === 'multiple_choice' || currentQuestion.type === 'fill_in_the_blank') {
+                currentQuestion.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.classList.add('option-button');
+                    button.onclick = () => checkAnswer(option);
+                    optionsContainer.appendChild(button);
+                });
+            } else if (currentQuestion.type === 'matching') {
+                const allItems = [...currentQuestion.pairs.map(p => p.word), ...currentQuestion.pairs.map(p => p.meaning)];
+                shuffleArray(allItems);
+                
+                allItems.forEach(item => {
+                    const button = document.createElement('button');
+                    button.textContent = item;
+                    button.classList.add('option-button');
+                    button.onclick = () => handleMatching(button, item);
+                    optionsContainer.appendChild(button);
+                });
+            }
+        }
+        
+        let selectedMatchingItems = [];
+
+        /**
+         * Handles the logic for matching questions.
+         */
+        function handleMatching(button, item) {
+            button.classList.toggle('bg-blue-500');
+            button.classList.toggle('hover:bg-blue-600');
+            button.classList.toggle('bg-green-500');
+
+            selectedMatchingItems.push({ button, item });
+
+            if (selectedMatchingItems.length === 2) {
+                const [item1, item2] = selectedMatchingItems;
+                const currentRoundQuestions = questions[currentRoundIndex].questions;
+                const isCorrectPair = currentRoundQuestions[currentQuestionIndex].pairs.some(pair => 
+                    (pair.word === item1.item && pair.meaning === item2.item) ||
+                    (pair.word === item2.item && pair.meaning === item1.item)
+                );
+
+                if (isCorrectPair) {
+                    item1.button.classList.add('correct');
+                    item2.button.classList.add('correct');
+                    setTimeout(() => {
+                         item1.button.style.display = 'none';
+                         item2.button.style.display = 'none';
+                         correctSound.play();
+                         questionsAnsweredCorrectly++;
+                         score += 10;
+                         scoreElement.textContent = score;
+
+                         if (optionsContainer.querySelectorAll('.option-button:not(.correct)').length === 0) {
+                             moveRacer();
+                             currentQuestionIndex++;
+                             setTimeout(showQuestion, 1000);
+                         }
+                    }, 500);
+                } else {
+                    item1.button.classList.add('incorrect');
+                    item2.button.classList.add('incorrect');
+                    wrongSound.play();
+                    setTimeout(() => {
+                        item1.button.classList.remove('bg-blue-500', 'incorrect');
+                        item1.button.classList.add('bg-green-500');
+                        item2.button.classList.remove('bg-blue-500', 'incorrect');
+                        item2.button.classList.add('bg-green-500');
+                    }, 1000);
+                }
+                selectedMatchingItems = [];
+            }
+        }
+        
+        /**
+         * Checks the answer for multiple choice and fill-in-the-blank questions.
+         */
+        function checkAnswer(selectedOption) {
+            const currentRoundQuestions = questions[currentRoundIndex].questions;
+            const currentQuestion = currentRoundQuestions[currentQuestionIndex];
+            if (selectedOption === currentQuestion.correctAnswer) {
+                questionsAnsweredCorrectly++;
+                score += 10;
+                scoreElement.textContent = score;
+                moveRacer();
+                correctSound.play();
+                
+                const correctButton = Array.from(optionsContainer.children).find(btn => btn.textContent === selectedOption);
+                correctButton.classList.add('correct');
+                
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    showQuestion();
+                }, 1000);
+                
+            } else {
+                wrongSound.play();
+                const wrongButton = Array.from(optionsContainer.children).find(btn => btn.textContent === selectedOption);
+                wrongButton.classList.add('incorrect');
+                setTimeout(() => {
+                    wrongButton.classList.remove('incorrect');
+                }, 1000);
+            }
+        }
+
+        /**
+         * Checks if the current round is complete.
+         */
+        function checkRoundComplete() {
+            if (currentRoundIndex < questions.length - 1) {
+                mainGameScreen.classList.add('hidden');
+                roundCompleteScreen.classList.remove('hidden');
+                roundCompleteNameElement.textContent = userName;
+                currentRoundNumberElement.textContent = currentRoundIndex + 1;
+            } else {
+                endGame();
+            }
+        }
+
+        /**
+         * Starts the mini-game.
+         */
+        function startMiniGame() {
+            roundCompleteScreen.classList.add('hidden');
+            miniGameScreen.classList.remove('hidden');
+            miniGameScore = 0;
+            miniGameScoreElement.textContent = miniGameScore;
+            
+            // Set up canvas
+            miniGameCanvas = document.getElementById('mini-game-canvas');
+            miniGameCtx = miniGameCanvas.getContext('2d');
+            miniGameCanvas.width = 400; // Fixed width for now
+            miniGameCanvas.height = 400; // Fixed height for now
+            
+            // Add click listener
+            miniGameCanvas.addEventListener('mousedown', handleMiniGameClick);
+
+            // Start timer
+            miniGameRunning = true;
+            miniGameTimeRemaining = 15;
+            miniGameTimerElement.textContent = miniGameTimeRemaining;
+            miniGameTimer = setInterval(() => {
+                miniGameTimeRemaining--;
+                miniGameTimerElement.textContent = miniGameTimeRemaining;
+                if (miniGameTimeRemaining <= 0) {
+                    clearInterval(miniGameTimer);
+                    endMiniGame();
+                }
+            }, 1000);
+            
+            // Spawn initial squares
+            miniGameSquares.length = 0; // Clear previous squares
+            spawnSquare(targetColor);
+            spawnSquare(decoyColor);
+
+            // Start game loop
+            gameLoop();
+        }
+
+        /**
+         * The main game loop for the mini-game.
+         */
+        function gameLoop() {
+            if (!miniGameRunning) return;
+
+            // Clear canvas
+            miniGameCtx.clearRect(0, 0, miniGameCanvas.width, miniGameCanvas.height);
+
+            // Draw squares
+            miniGameSquares.forEach(square => {
+                miniGameCtx.fillStyle = square.color;
+                miniGameCtx.fillRect(square.x, square.y, square.size, square.size);
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        /**
+         * Spawns a new square of a given color at a random position.
+         */
+        function spawnSquare(color) {
+            let x, y;
+            let overlapping;
+            
+            // Find a non-overlapping position
+            do {
+                overlapping = false;
+                x = Math.random() * (miniGameCanvas.width - squareSize);
+                y = Math.random() * (miniGameCanvas.height - squareSize);
+
+                for (let i = 0; i < miniGameSquares.length; i++) {
+                    const otherSquare = miniGameSquares[i];
+                    if (
+                        x < otherSquare.x + otherSquare.size &&
+                        x + squareSize > otherSquare.x &&
+                        y < otherSquare.y + otherSquare.size &&
+                        y + squareSize > otherSquare.y
+                    ) {
+                        overlapping = true;
+                        break;
+                    }
+                }
+            } while (overlapping);
+
+            miniGameSquares.push({
+                x: x,
+                y: y,
+                size: squareSize,
+                color: color
+            });
+        }
+        
+        /**
+         * Handles the click event on the mini-game canvas.
+         */
+        function handleMiniGameClick(event) {
+            const rect = miniGameCanvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            for (let i = miniGameSquares.length - 1; i >= 0; i--) {
+                const square = miniGameSquares[i];
+                if (
+                    mouseX > square.x && mouseX < square.x + square.size &&
+                    mouseY > square.y && mouseY < square.y + square.size
+                ) {
+                    if (square.color === targetColor) {
+                        // Correct click
+                        miniGameScore += 10;
+                        miniGameSquares.splice(i, 1); // Remove the clicked square
+                        spawnSquare(targetColor); // Spawn a new target
+                        spawnSquare(decoyColor); // Spawn a new decoy
+                        correctSound.play();
+                    } else {
+                        // Incorrect click
+                        miniGameScore -= 5;
+                        wrongSound.play();
+                    }
+                    miniGameScoreElement.textContent = miniGameScore;
+                    return; // Stop after processing one square
+                }
+            }
+        }
+
+
+        /**
+         * Ends the mini-game and transitions back to the main game or ends the game.
+         */
+        function endMiniGame() {
+            miniGameRunning = false;
+            miniGameCanvas.removeEventListener('mousedown', handleMiniGameClick);
+            
+            miniGameScreen.classList.add('hidden');
+            score += miniGameScore;
+            scoreElement.textContent = score;
+
+            // Increment the round and reset question index
+            currentRoundIndex++;
+            currentQuestionIndex = 0;
+
+            // FIX: Check if there are more rounds before showing the next question
+            if (currentRoundIndex < questions.length) {
+                mainGameScreen.classList.remove('hidden');
+                showQuestion();
+            } else {
+                endGame();
+            }
+        }
+
+        /**
+         * Updates the racer's position on the progress bar.
+         */
+        function moveRacer() {
+            const progress = (questionsAnsweredCorrectly / totalQuestions) * 100;
+            progressTrack.style.width = `${progress}%`;
+            racer.style.left = `${progress}%`;
+        }
+
+        /**
+         * Ends the entire game and shows the final score screen.
+         */
+        function endGame() {
+            mainGameScreen.classList.add('hidden');
+            endGameScreen.classList.remove('hidden');
+            finalScoreElement.textContent = score;
+            if (userName) {
+                finalUserNameElement.textContent = userName;
+            } else {
+                finalUserNameElement.textContent = "Player";
+            }
+            finishSound.play();
+        }
+
+        /**
+         * Restarts the game to the initial state.
+         */
+        function restartGame() {
+            endGameScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            questions = defaultQuestions;
+            calculateTotalQuestions();
+            userNameInput.value = '';
+        }
+
+        /**
+         * Shuffles an array.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        window.onload = () => {
+            calculateTotalQuestions();
+        }
+    </script>
+</body>
+</html>
